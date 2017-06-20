@@ -230,6 +230,7 @@
         }
         if (this.playlist.length === 1) {
           this.loop()
+          return
         } else {
           let index = this.currentIndex - 1
           if (index === -1) {
@@ -240,7 +241,6 @@
             this.togglePlaying()
           }
         }
-        this.songReady = false
       },
       next() {
         if (!this.songReady) {
@@ -248,6 +248,7 @@
         }
         if (this.playlist.length === 1) {
           this.loop()
+          return
         } else {
           let index = this.currentIndex + 1
           if (index === this.playlist.length) {
@@ -258,7 +259,6 @@
             this.togglePlaying()
           }
         }
-        this.songReady = false
       },
       loop() {
         this.$refs.audio.currentTime = 0
@@ -307,19 +307,23 @@
       },
       getLyric() {
         this.currentSong.getLyric().then((lyric) => {
+          if (this.currentSong.lyric !== lyric) {
+            return
+          }
           this.currentLyric = new Lyric(lyric, this.handleLyric)
           this.isPureMusic = !this.currentLyric.lines.length
           if (this.isPureMusic) {
             this.pureMusicLyric = this.currentLyric.lrc.replace(timeExp, '').trim()
             this.playingLyric = this.pureMusicLyric
-          } else if (this.playing && this.songReady) {
-            const currentTime = this.currentSong.duration * this.percent * 1000
-            this.currentLyric.seek(currentTime)
+          } else {
+            if (this.playing && this.songReady) {
+              // 这个时候有可能用户已经播放了歌曲，要切到对应位置
+              const currentTime = this.currentSong.duration * this.percent * 1000
+              this.currentLyric.seek(currentTime)
+            }
           }
         }).catch(() => {
           this.currentLyric = null
-          this.playingLyric = ''
-          this.currentLineNum = 0
         })
       },
       handleLyric({lineNum, txt}) {
@@ -431,13 +435,23 @@
     },
     watch: {
       currentSong(newSong, oldSong) {
+        if (!newSong.id) {
+          return
+        }
         if (newSong.id === oldSong.id) {
           return
         }
+        this.songReady = false
         if (this.currentLyric) {
           this.currentLyric.stop()
+          // 重置为null
+          this.currentLyric = null
+          this.currentTime = 0
+          this.playingLyric = ''
+          this.currentLineNum = 0
         }
-        setTimeout(() => {
+        clearTimeout(this.timer)
+        this.timer = setTimeout(() => {
           this.$refs.audio.play()
           this.getLyric()
         }, 1000)
