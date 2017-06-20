@@ -18,7 +18,7 @@
             <h1 class="title">
               <span class="text">搜索历史</span>
               <span class="clear" @click="showConfirm">
-              <i class="icon-clear"></i>
+                <i class="icon-clear"></i>
               <span class="desc">清空</span>
             </span>
             </h1>
@@ -34,7 +34,7 @@
     <div class="search-result" v-show="query" ref="searchResult">
       <suggest :query="query" @select="saveSearch" ref="suggest" @listScroll="blurInput"></suggest>
     </div>
-    <confirm text="确定要清空搜索历史" confirmBtnText="清空" ref="confirm" @cancel="" @confirm="clearSearchHistory"></confirm>
+    <confirm text="确定要清空搜索历史吗？" confirmBtnText="清空" ref="confirm" @cancel="" @confirm="clearSearchHistory"></confirm>
     <router-view></router-view>
   </div>
 </template>
@@ -47,15 +47,16 @@
   import Scroll from 'base/scroll/scroll'
   import { getHotKey } from 'api/search'
   import { ERR_OK } from 'api/config'
-  import { playlistMixin, searchMixin } from 'common/js/mixin'
-  import { mapActions } from 'vuex'
+  import { playlistMixin } from 'common/js/mixin'
+  import { mapGetters, mapActions } from 'vuex'
 
   export default {
-    mixins: [playlistMixin, searchMixin],
+    mixins: [playlistMixin],
     data() {
       return {
         hotKey: [],
-        query: ''
+        query: '',
+        refreshDelay: 120
       }
     },
     created() {
@@ -64,7 +65,10 @@
     computed: {
       shortCut () {
         return this.hotKey.concat(this.searchHistory)
-      }
+      },
+      ...mapGetters([
+        'searchHistory'
+      ])
     },
     methods: {
       handlePlaylist(playlist) {
@@ -77,6 +81,18 @@
       showConfirm() {
         this.$refs.confirm.show()
       },
+      addQuery(query) {
+        this.$refs.searchBox.setQuery(query)
+      },
+      onQueryChange(query) {
+        this.query = query.trim()
+      },
+      saveSearch() {
+        this.saveSearchHistory(this.query)
+      },
+      blurInput() {
+        this.$refs.searchBox.blur()
+      },
       _getHotKey() {
         getHotKey().then((res) => {
           if (res.code === ERR_OK) {
@@ -85,6 +101,8 @@
         })
       },
       ...mapActions([
+        'saveSearchHistory',
+        'deleteSearchHistory',
         'clearSearchHistory'
       ])
     },

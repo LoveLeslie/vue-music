@@ -7,39 +7,33 @@
           <i class="icon-close"></i>
         </div>
       </div>
-      <div class="search-box-wrapper">
-        <search-box ref="searchBox" @query="onQueryChange" placeholder="搜索歌曲"></search-box>
-      </div>
-      <div class="shortcut" v-show="!query">
+      <div class="shortcut">
         <switches :switches="switches" :currentIndex="currentIndex" @switch="switchItem"></switches>
         <div class="list-wrapper">
-          <scroll v-if="currentIndex===0" class="list-scroll" :data="playHistory" ref="songList">
+          <scroll class="list-scroll"
+                  ref="playList"
+                  v-if="currentIndex===0"
+                  :data="playHistory"
+          >
             <div class="list-inner">
               <song-list :songs="playHistory" @select="selectSong" ></song-list>
             </div>
           </scroll>
-          <scroll :refreshDelay="refreshDelay"
-                  ref="searchList"
+          <scroll class="list-scroll"
+                  ref="favoriteList"
+                  :data="favoriteList"
                   v-if="currentIndex===1"
-                  class="list-scroll"
-                  :data="searchHistory">
+                  >
             <div class="list-inner">
-              <search-list
-                @select="addQuery" @delete="deleteSearchHistory" :searches="searchHistory"></search-list>
+              <song-list :songs="favoriteList" @select="selectFavoriteSong"></song-list>
             </div>
           </scroll>
         </div>
       </div>
-      <div class="search-result" v-show="query" ref="searchResult">
-        <suggest :query="query"
-                 :showSinger="showSinger"
-                 @select="selectSuggest"
-                 @listScroll="blurInput"></suggest>
-      </div>
       <top-tip ref="topTip">
         <div class="tip-title">
           <i class="icon-ok"></i>
-          <span class="text">1首歌曲已添加到当前播放列表</span>
+          <span class="text">已添加到播放列表</span>
         </div>
       </top-tip>
     </div>
@@ -47,19 +41,14 @@
 </template>
 
 <script type="text/ecmascript-6">
-  import SearchBox from 'base/search-box/search-box'
   import Switches from 'base/switches/switches'
   import SongList from 'base/song-list/song-list'
-  import SearchList from 'base/search-list/search-list'
-  import Suggest from 'components/suggest/suggest'
   import TopTip from 'base/top-tip/top-tip'
   import { mapGetters, mapActions } from 'vuex'
   import Song from 'common/js/song'
   import Scroll from 'base/scroll/scroll'
-  import {searchMixin} from 'common/js/mixin'
 
   export default {
-    mixins: [searchMixin],
     data() {
       return {
         showFlag: false,
@@ -70,14 +59,15 @@
             name: '最近播放'
           },
           {
-            name: '搜索历史'
+            name: '我的收藏'
           }
         ]
       }
     },
     computed: {
       ...mapGetters([
-        'playHistory'
+        'playHistory',
+        'favoriteList'
       ])
     },
     methods: {
@@ -85,9 +75,9 @@
         this.showFlag = true
         setTimeout(() => {
           if (this.currentIndex === 0) {
-            this.$refs.songList.refresh()
+            this.$refs.playList.refresh()
           } else {
-            this.$refs.searchList.refresh()
+            this.$refs.favoriteList.refresh()
           }
         }, 20)
       },
@@ -97,26 +87,23 @@
       switchItem(index) {
         this.currentIndex = index
       },
-      selectSuggest() {
-        this.$refs.topTip.show()
-        this.saveSearch()
-      },
       selectSong(song, index) {
         if (index !== 0) {
           this.insertSong(new Song(song))
           this.$refs.topTip.show()
         }
       },
+      selectFavoriteSong(song) {
+        this.insertSong(new Song(song))
+        this.$refs.topTip.show()
+      },
       ...mapActions([
         'insertSong'
       ])
     },
     components: {
-      SearchBox,
       Switches,
       SongList,
-      SearchList,
-      Suggest,
       TopTip,
       Scroll
     }
@@ -141,6 +128,7 @@
     .header
       position: relative
       height: 44px
+      margin-bottom: 20px
       text-align: center
       .title
         line-height: 44px
@@ -155,24 +143,19 @@
           padding: 12px
           font-size: 20px
           color: $color-theme
-    .search-box-wrapper
-      margin: 20px
+
     .shortcut
       .list-wrapper
         position: absolute
-        top: 165px
+        top: 100px
         bottom: 0
         width: 100%
+        background: $color-background
         .list-scroll
           height: 100%
           overflow: hidden
           .list-inner
             padding: 20px 30px
-    .search-result
-      position: fixed
-      top: 124px
-      bottom: 0
-      width: 100%
     .tip-title
       text-align: center
       padding: 18px 0

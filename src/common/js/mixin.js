@@ -34,9 +34,9 @@ export const playerMixin = {
     ...mapGetters([
       'sequenceList',
       'playlist',
+      'favoriteList',
       'currentSong',
-      'mode',
-      'favoriteList'
+      'mode'
     ])
   },
   methods: {
@@ -86,38 +86,6 @@ export const playerMixin = {
     ...mapActions([
       'saveFavoriteList',
       'deleteFavoriteList'
-    ])
-  }
-}
-
-export const searchMixin = {
-  data() {
-    return {
-      query: '',
-      refreshDelay: 120
-    }
-  },
-  computed: {
-    ...mapGetters([
-      'searchHistory'
-    ])
-  },
-  methods: {
-    addQuery(query) {
-      this.$refs.searchBox.setQuery(query)
-    },
-    onQueryChange(query) {
-      this.query = query.trim()
-    },
-    saveSearch() {
-      this.saveSearchHistory(this.query)
-    },
-    blurInput() {
-      this.$refs.searchBox.blur()
-    },
-    ...mapActions([
-      'saveSearchHistory',
-      'deleteSearchHistory'
     ])
   }
 }

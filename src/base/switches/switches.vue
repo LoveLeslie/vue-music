@@ -33,7 +33,7 @@
   .switches
     display: flex
     align-items: center
-    width: 240px
+    width: 260px
     margin: 0 auto
     border: 1px solid $color-highlight-background
     border-radius: 5px
@@ -45,5 +45,5 @@
       color: $color-text-d
       &.active
         background: $color-highlight-background
-        color: $color-text
+        color: $color-theme
 </style>
