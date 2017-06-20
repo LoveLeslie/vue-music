@@ -48,17 +48,7 @@
         if (!this.slider) {
           return
         }
-        clearTimeout(this.resizeTimer)
-        this.resizeTimer = setTimeout(() => {
-          if (this.slider.isInTransition) {
-            this._onScrollEnd()
-          } else {
-            if (this.autoPlay) {
-              this._play()
-            }
-          }
-          this.refresh()
-        }, 60)
+        this.refresh()
       })
     },
     activated() {
