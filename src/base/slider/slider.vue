@@ -15,6 +15,7 @@
   import { addClass } from 'common/js/dom'
 
   export default {
+    name: 'slider',
     data() {
       return {
         dots: [],
