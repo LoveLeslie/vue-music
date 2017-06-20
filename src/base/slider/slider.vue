@@ -48,10 +48,29 @@
         if (!this.slider) {
           return
         }
-        setTimeout(() => {
-          this.slider.refresh()
-        }, 20)
+        clearTimeout(this.resizeTimer)
+        this.resizeTimer = setTimeout(() => {
+          if (this.slider.isInTransition) {
+            this._onScrollEnd()
+          } else {
+            if (this.autoPlay) {
+              this._play()
+            }
+          }
+          this.refresh()
+        }, 60)
       })
+    },
+    activated() {
+      if (this.autoPlay) {
+        this._play()
+      }
+    },
+    deactivated() {
+      clearTimeout(this.timer)
+    },
+    beforeDestroy() {
+      clearTimeout(this.timer)
     },
     methods: {
       refresh() {
@@ -111,9 +130,6 @@
           this.slider.goToPage(pageIndex, 0, 500)
         }, this.interval)
       }
-    },
-    destroyed() {
-      clearTimeout(this.timer)
     }
   }
 </script>
@@ -145,6 +161,7 @@
       left: 0
       right: 0
       bottom: 10px
+      transform: translateZ(3px)
       text-align: center
       font-size: 0
       .dot

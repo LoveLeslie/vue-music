@@ -12,7 +12,7 @@
               <ul class="songlist">
                 <li class="song" v-for="(song,index) in item.songlist">
                   <span>{{index+1}}</span>
-                  <span>{{song.songname}}-{{song.singername}}</span>
+                  <span>{{song.songname}} - {{song.singername}}</span>
                 </li>
               </ul>
             </li>

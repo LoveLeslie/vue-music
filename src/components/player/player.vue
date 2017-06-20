@@ -39,6 +39,9 @@
                    :class="{'current':currentLineNum===index}"
                    v-for="(line,index) in currentLyric.lines">{{line.txt}}</p>
               </div>
+              <div class="pure-music" v-show="isPureMusic">
+                <p>{{pureMusicLyric}}</p>
+              </div>
             </div>
           </scroll>
         </div>
@@ -68,7 +71,7 @@
               <i @click="next" class="icon-next"></i>
             </div>
             <div class="icon i-right">
-              <i class="icon-not-favorite"></i>
+              <i class="icon" :class="getFavoriteIcon(currentSong)" @click.stop="toggleFavorite(currentSong)"></i>
             </div>
           </div>
         </div>
@@ -90,11 +93,12 @@
           ></progress-circle>
           <i class="icon-mini" @click.stop="togglePlaying" :class="miniIcon"></i>
         </div>
-        <div class="control">
+        <div class="control" @click.stop="showPlaylist">
           <i class="icon-playlist"></i>
         </div>
       </div>
     </transition>
+    <playlist ref="playlist"></playlist>
     <audio ref="audio"
            :src="currentSong.url"
            @canplay="ready"
@@ -107,20 +111,24 @@
 
 <script type="text/ecmascript-6">
 
-  import { mapGetters, mapMutations } from 'vuex'
+  import { mapGetters, mapMutations, mapActions } from 'vuex'
   import animations from 'create-keyframe-animation'
   import { prefixStyle } from 'common/js/dom'
-  import { shuffle } from 'common/js/utils'
   import { playMode } from 'common/js/config'
   import ProgressBar from 'base/progress-bar/progress-bar'
   import ProgressCircle from 'base/progress-circle/progress-circle'
   import Lyric from 'lyric-parser'
   import Scroll from 'base/scroll/scroll'
+  import Playlist from 'components/playlist/playlist'
+  import { playerMixin } from 'common/js/mixin'
 
   const transform = prefixStyle('transform')
   const transitionDuration = prefixStyle('transitionDuration')
 
+  const timeExp = /\[(\d{2}):(\d{2}):(\d{2})]/g
+
   export default {
+    mixins: [playerMixin],
     data() {
       return {
         songReady: false,
@@ -129,7 +137,9 @@
         currentLyric: null,
         currentLineNum: 0,
         currentShow: 'cd',
-        playingLyric: ''
+        playingLyric: '',
+        isPureMusic: false,
+        pureMusicLyric: ''
       }
     },
     created() {
@@ -147,9 +157,6 @@
       },
       miniIcon() {
         return this.playing ? 'icon-pause-mini' : 'icon-play-mini'
-      },
-      iconMode() {
-        return this.mode === playMode.sequence ? 'icon-sequence' : this.mode === playMode.loop ? 'icon-loop' : 'icon-random'
       },
       percent() {
         return this.currentTime / this.currentSong.duration
@@ -212,7 +219,7 @@
         if (!this.songReady) {
           return
         }
-        this.setPlaying(!this.playing)
+        this.setPlayingState(!this.playing)
         if (this.currentLyric) {
           this.currentLyric.togglePlay()
         }
@@ -262,6 +269,12 @@
       },
       ready() {
         this.songReady = true
+        this.savePlayHistory(this.currentSong)
+        // 如果歌曲的播放晚于歌词的出现，播放的时候需要同步歌词
+        if (this.currentLyric && !this.isPureMusic) {
+          const currentTime = this.currentSong.duration * this.percent * 1000
+          this.currentLyric.seek(currentTime)
+        }
       },
       error() {
         this.songReady = true
@@ -292,29 +305,16 @@
           this.currentLyric.seek(currentTime * 1000)
         }
       },
-      changeMode() {
-        const mode = (this.mode + 1) % 3
-        this.setPlayMode(mode)
-        let list = null
-        if (mode === playMode.random) {
-          list = shuffle(this.sequenceList)
-        } else {
-          list = this.sequenceList
-        }
-        this.resetCurrentIndex(list)
-        this.setPlaylist(list)
-      },
-      resetCurrentIndex(list) {
-        let index = list.findIndex((item) => {
-          return item.id === this.currentSong.id
-        })
-        this.setCurrentIndex(index)
-      },
       getLyric() {
         this.currentSong.getLyric().then((lyric) => {
           this.currentLyric = new Lyric(lyric, this.handleLyric)
-          if (this.playing) {
-            this.currentLyric.play()
+          this.isPureMusic = !this.currentLyric.lines.length
+          if (this.isPureMusic) {
+            this.pureMusicLyric = this.currentLyric.lrc.replace(timeExp, '').trim()
+            this.playingLyric = this.pureMusicLyric
+          } else if (this.playing && this.songReady) {
+            const currentTime = this.currentSong.duration * this.percent * 1000
+            this.currentLyric.seek(currentTime)
           }
         }).catch(() => {
           this.currentLyric = null
@@ -396,6 +396,9 @@
         this.$refs.middleL.style[transitionDuration] = `${time}ms`
         this.touch.initiated = false
       },
+      showPlaylist() {
+        this.$refs.playlist.show()
+      },
       _pad(num, n = 2) {
         let len = num.toString().length
         while (len < n) {
@@ -420,12 +423,11 @@
         }
       },
       ...mapMutations({
-        setFullScreen: 'SET_FULL_SCREEN',
-        setPlaying: 'SET_PLAYING_STATE',
-        setCurrentIndex: 'SET_CURRENT_INDEX',
-        setPlayMode: 'SET_PLAY_MODE',
-        setPlaylist: 'SET_PLAY_LIST'
-      })
+        setFullScreen: 'SET_FULL_SCREEN'
+      }),
+      ...mapActions([
+        'savePlayHistory'
+      ])
     },
     watch: {
       currentSong(newSong, oldSong) {
@@ -450,7 +452,8 @@
     components: {
       ProgressBar,
       ProgressCircle,
-      Scroll
+      Scroll,
+      Playlist
     }
   }
 </script>
@@ -571,6 +574,11 @@
               font-size: $font-size-medium
               &.current
                 color: $color-text
+            .pure-music
+              padding-top: 50%
+              line-height: 32px
+              color: $color-text-l
+              font-size: $font-size-medium
       .bottom
         position: absolute
         bottom: 50px

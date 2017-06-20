@@ -23,3 +23,7 @@ export const topList = state => state.topList
 export const topMusicList = state => state.topMusicList
 
 export const searchHistory = state => state.searchHistory
+
+export const playHistory = state => state.playHistory
+
+export const favoriteList = state => state.favoriteList

@@ -19,11 +19,12 @@
               <span class="text">搜索历史</span>
               <span class="clear" @click="showConfirm">
               <i class="icon-clear"></i>
+              <span class="desc">清空</span>
             </span>
             </h1>
             <search-list
               :searches="searchHistory"
-              @select="addQuery(item.k)"
+              @select="addQuery(query)"
               @delete="deleteSearchHistory"
             ></search-list>
           </div>
@@ -33,7 +34,7 @@
     <div class="search-result" v-show="query" ref="searchResult">
       <suggest :query="query" @select="saveSearch" ref="suggest" @listScroll="blurInput"></suggest>
     </div>
-    <confirm text="确定要清空搜索历史？" confirmBtnText="清空" ref="confirm" @cancel="" @confirm="clearSearchHistory"></confirm>
+    <confirm text="确定要清空搜索历史" confirmBtnText="清空" ref="confirm" @cancel="" @confirm="clearSearchHistory"></confirm>
     <router-view></router-view>
   </div>
 </template>
@@ -46,11 +47,11 @@
   import Scroll from 'base/scroll/scroll'
   import { getHotKey } from 'api/search'
   import { ERR_OK } from 'api/config'
-  import { playlistMixin } from 'common/js/mixin'
-  import { mapActions, mapGetters } from 'vuex'
+  import { playlistMixin, searchMixin } from 'common/js/mixin'
+  import { mapActions } from 'vuex'
 
   export default {
-    mixins: [playlistMixin],
+    mixins: [playlistMixin, searchMixin],
     data() {
       return {
         hotKey: [],
@@ -63,10 +64,7 @@
     computed: {
       shortCut () {
         return this.hotKey.concat(this.searchHistory)
-      },
-      ...mapGetters([
-        'searchHistory'
-      ])
+      }
     },
     methods: {
       handlePlaylist(playlist) {
@@ -75,18 +73,6 @@
         this.$refs.shortcut.refresh()
         this.$refs.searchResult.style.bottom = bottom
         this.$refs.suggest.refresh()
-      },
-      addQuery(query) {
-        this.$refs.searchBox.setQuery(query)
-      },
-      onQueryChange(query) {
-        this.query = query
-      },
-      blurInput() {
-        this.$refs.searchBox.blur()
-      },
-      saveSearch() {
-        this.saveSearchHistory(this.query)
       },
       showConfirm() {
         this.$refs.confirm.show()
@@ -99,8 +85,6 @@
         })
       },
       ...mapActions([
-        'saveSearchHistory',
-        'deleteSearchHistory',
         'clearSearchHistory'
       ])
     },
@@ -176,6 +160,9 @@
               .icon-clear
                 font-size: $font-size-medium
                 color: $color-text-d
+              .desc
+                font-size: $font-size-medium
+                color: $color-text-l
     .search-result
       position: fixed
       width: 100%

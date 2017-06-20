@@ -3,10 +3,10 @@
     <scroll ref="scroll" class="recommend-content" :data="hotDiss">
       <div>
         <div class="slider-wrapper" v-if="recommends.length">
-          <slider>
-            <div v-for="item in recommends">
+          <slider ref="slider">
+            <div v-for="item in recommends" >
               <a :href="item.jumpurl">
-                <img :src="item.pic">
+                <img :src="item.pic" >
               </a>
             </div>
           </slider>
@@ -19,7 +19,7 @@
               <img width="60" height="60" @load="loadImage" v-lazy="item.imgurl">
             </div>
             <div class="text">
-              <h2 class="name">{{item.author}}</h2>
+              <h2 class="name"  v-html="item.author"></h2>
               <p class="desc">{{item.dissname}}</p>
             </div>
           </li>
