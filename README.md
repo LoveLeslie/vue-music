@@ -13,7 +13,7 @@
 
 `axios` + `jsonp` 服务端通讯
 
-`HTML`  + `Stylus` + `ES6+` 技术语言
+`HTML`  + `Stylus` + `ES6` 技术语言
 
 `webpack 2.0` 构建工具
 
